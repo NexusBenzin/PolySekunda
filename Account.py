@@ -3,6 +3,12 @@ class Account:
        self.name = name
        self.bal = 1000
        self.password = password
-
-    def
+    
+    def login(self):
+        username = input("What is your username? ")
+        password = input("What is you password? ")
         
+        if password == self.password:
+
+
+    
