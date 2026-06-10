@@ -10,7 +10,7 @@ class Account:
        self.name = name
        self.bal = 1000
        self.password = password
-       data
+       data.add_user(self.name, self.password)
     
     def login(self):
         username = input("What is your username? ")
