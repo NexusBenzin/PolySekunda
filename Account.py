@@ -1,4 +1,6 @@
 from user-data import *
+data = Database()
+
 
 class Account:
     def __init__(self):
@@ -8,6 +10,7 @@ class Account:
        self.name = name
        self.bal = 1000
        self.password = password
+       data
     
     def login(self):
         username = input("What is your username? ")
