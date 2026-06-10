@@ -1,1 +1,3 @@
-users = []
+def database():
+    users = []
+    return users
