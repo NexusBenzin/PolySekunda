@@ -1,2 +1,2 @@
-with open("users") as f:
+with open("users.txt") as f:
     print(f.read())
