@@ -9,6 +9,9 @@ class Account:
         password = input("What is you password? ")
         
         if password == self.password:
+   print("LOGGED IN!")
+else:
+    print("Wrong password/username")
 
 
     
