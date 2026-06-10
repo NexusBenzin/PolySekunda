@@ -12,9 +12,7 @@ class Account:
        self.password = password
        data.add_user(self.name, self.password)
     
-    def login(self):
-        username = input("What is your username? ")
-        password = input("What is you password? ")
+    def login(self, password):
         
         if password == self.password:
    print("LOGGED IN!")
