@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, session, jsonify
-# from Account import Account  ← uncomment when your friend is done
+from user_data import Database
+from Market import Market
 
 app = Flask(__name__)
 app.secret_key = "polysekunda_secret_123"  # needed for sessions to work
@@ -8,16 +9,12 @@ app.secret_key = "polysekunda_secret_123"  # needed for sessions to work
 # DATA
 # =====================
 
-# Temporary fake accounts until Account.py is ready
-# Replace this with real Account objects later
-accounts = {
-    "adam":  { "password": "1234", "balance": 1000 },
-    "petra": { "password": "abcd", "balance": 1200 },
-    "marek": { "password": "pass", "balance": 600  },
-}
+db = Database()
 
-# Markets list - add more questions here
-from market import Market
+# Create some starting accounts (later this could come from a signup page)
+db.add_user("adam", "1234")
+db.add_user("petra", "abcd")
+db.add_user("marek", "pass")
 
 markets = [
     Market("Will Slovakia beat Czechia?"),
@@ -36,6 +33,23 @@ def home():
 
 
 # =====================
+# SESSION CHECK
+# =====================
+
+@app.route("/check-session")
+def check_session():
+    if "user" in session:
+        username = session["user"]
+        user = db.find_user(username)
+        return jsonify({
+            "logged_in": True,
+            "username": username,
+            "balance": user["balance"]
+        })
+    return jsonify({ "logged_in": False })
+
+
+# =====================
 # LOGIN / LOGOUT
 # =====================
 
@@ -45,13 +59,14 @@ def login():
     username = data.get("username", "").lower()
     password = data.get("password", "")
 
-    # Check if account exists and password is correct
-    if username in accounts and accounts[username]["password"] == password:
-        session["user"] = username          # remember who is logged in
+    user = db.find_user(username)
+
+    if user is not None and user["password"] == password:
+        session["user"] = username
         return jsonify({
             "success":  True,
             "username": username,
-            "balance":  accounts[username]["balance"]
+            "balance":  user["balance"]
         })
     else:
         return jsonify({ "success": False, "error": "Wrong username or password." })
@@ -59,7 +74,7 @@ def login():
 
 @app.route("/logout", methods=["POST"])
 def logout():
-    session.pop("user", None)               # forget who was logged in
+    session.pop("user", None)
     return jsonify({ "success": True })
 
 
@@ -89,22 +104,20 @@ def get_markets():
 
 @app.route("/bet", methods=["POST"])
 def place_bet():
-    # Must be logged in
     if "user" not in session:
         return jsonify({ "success": False, "error": "Not logged in." })
 
     data       = request.get_json()
     market_id  = data.get("market_id")
-    choice     = data.get("choice")       # "yes" or "no"
+    choice     = data.get("choice")
     amount     = data.get("amount")
 
     username = session["user"]
-    account  = accounts[username]
+    user     = db.find_user(username)
 
-    # Validate
     if amount <= 0:
         return jsonify({ "success": False, "error": "Amount must be greater than 0." })
-    if amount > account["balance"]:
+    if amount > user["balance"]:
         return jsonify({ "success": False, "error": "Not enough coins." })
     if market_id is None or market_id >= len(markets):
         return jsonify({ "success": False, "error": "Market not found." })
@@ -114,13 +127,12 @@ def place_bet():
     if market.resolved:
         return jsonify({ "success": False, "error": "Market is already closed." })
 
-    # Place the bet
-    account["balance"] -= amount
+    user["balance"] -= amount
     market.bets[choice].append((username, amount))
 
     return jsonify({
         "success": True,
-        "new_balance": account["balance"],
+        "new_balance": user["balance"],
         "odds": market.get_odds(),
     })
 
@@ -132,8 +144,8 @@ def place_bet():
 @app.route("/leaderboard", methods=["GET"])
 def leaderboard():
     players = [
-        { "name": name, "coins": acc["balance"] }
-        for name, acc in accounts.items()
+        { "name": user["username"], "coins": user["balance"] }
+        for user in db.userlist
     ]
     players.sort(key=lambda p: p["coins"], reverse=True)
     return jsonify(players)
