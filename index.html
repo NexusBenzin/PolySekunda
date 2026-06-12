@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PolySekunda</title>
+    <style>
+
+      /* ---- BASE ---- */
+      * { box-sizing: border-box; }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+      }
+
+      /* ---- NAVBAR ---- */
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 14px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+      }
+      .navbar h1 { margin: 0; font-size: 20px; }
+      .user-info { font-size: 14px; color: #555; display: flex; align-items: center; gap: 8px; }
+      .user-info strong { color: #222; }
+
+      /* ---- CARDS ---- */
+      .card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 14px;
+      }
+      .card h2 { margin: 0 0 12px; font-size: 16px; }
+
+      /* ---- BUTTONS ---- */
+      button {
+        padding: 8px 18px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        font-size: 14px;
+        background: white;
+      }
+      button:hover { background: #f5f5f5; }
+      .btn-primary {
+        background: #222;
+        color: white;
+        border-color: #222;
+        width: 100%;
+        padding: 11px;
+        font-size: 15px;
+        margin-top: 4px;
+      }
+      .btn-primary:hover { background: #444; }
+      .btn-logout {
+        padding: 4px 10px;
+        font-size: 12px;
+        color: #888;
+        border-color: #ddd;
+      }
+      .btn-yes { border-color: #1a9e60; color: #1a9e60; }
+      .btn-no  { border-color: #d94f3d; color: #d94f3d; }
+
+      /* ---- INPUTS ---- */
+      .input-full {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+      .input-small {
+        width: 70px;
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      /* ---- BET ROW ---- */
+      .bet-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .bet-result {
+        font-size: 13px;
+        color: #888;
+        margin: 8px 0 0;
+        min-height: 18px;
+      }
+
+      /* ---- ODDS BAR ---- */
+      .odds-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .odds-bar {
+        flex: 1;
+        height: 6px;
+        border-radius: 99px;
+        background: #eee;
+        overflow: hidden;
+      }
+      .odds-fill-yes { height: 100%; background: #1a9e60; border-radius: 99px; }
+      .odds-fill-no  { height: 100%; background: #d94f3d; border-radius: 99px; }
+      .odds-label-yes { font-size: 13px; font-weight: bold; color: #1a9e60; min-width: 36px; }
+      .odds-label-no  { font-size: 13px; font-weight: bold; color: #d94f3d; min-width: 36px; text-align: right; }
+
+      /* ---- LOGIN ---- */
+      .login-wrapper {
+        max-width: 320px;
+        margin: 80px auto;
+      }
+      .login-wrapper h2 { margin: 0 0 18px; font-size: 18px; }
+      .error-msg {
+        color: #d94f3d;
+        font-size: 13px;
+        margin-bottom: 8px;
+        min-height: 18px;
+      }
+
+      /* ---- LEADERBOARD ---- */
+      table { width: 100%; border-collapse: collapse; }
+      th {
+        text-align: left;
+        font-size: 12px;
+        color: #999;
+        padding: 6px 0;
+        border-bottom: 1px solid #eee;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      td { padding: 9px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+      td.rank  { color: #bbb; width: 28px; }
+      td.coins { font-weight: bold; text-align: right; }
+      tr.me td { color: #1a9e60; }
+
+      /* ---- LOADING ---- */
+      .loading { color: #aaa; font-size: 14px; padding: 10px 0; }
+
+    </style>
+  </head>
+  <body>
+
+    <!-- ===================== LOGIN PAGE ===================== -->
+    <div id="login-page">
+      <div class="card login-wrapper">
+        <h2 id="auth-title">PolySekunda</h2>
+        <input class="input-full" id="username" type="text" placeholder="Username">
+        <input class="input-full" id="password" type="password" placeholder="Password">
+        <p class="error-msg" id="login-error"></p>
+        <button class="btn-primary" id="auth-button" onclick="login()">Log in</button>
+        <p style="text-align:center; font-size:13px; margin-top:10px;">
+          <span id="auth-toggle-text">No account?</span>
+          <a href="#" onclick="toggleAuthMode(); return false;" id="auth-toggle-link">Sign up</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ===================== MAIN APP ===================== -->
+    <div id="main-app" style="display:none;">
+
+      <div class="navbar">
+        <h1>PolySekunda</h1>
+        <div class="user-info">
+          👤 <strong id="logged-in-name"></strong>
+          &nbsp;·&nbsp;
+          <strong id="balance"></strong> coins
+          <button class="btn-logout" onclick="logout()">Log out</button>
+        </div>
+      </div>
+
+      <!-- Markets will be loaded here by JavaScript -->
+      <div id="markets-container">
+        <p class="loading">Loading markets...</p>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="card">
+        <h2>Leaderboard</h2>
+        <table>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th style="text-align:right">Coins</th>
+          </tr>
+          <tbody id="leaderboard"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ===================== JAVASCRIPT ===================== -->
+    <script>
+
+      // --- State ---
+      var currentUser = "";
+      var currentBalance = 0;
+
+
+      // =====================
+      // LOGIN / LOGOUT
+      // =====================
+
+      function login() {
+        var username = document.getElementById("username").value.toLowerCase();
+        var password = document.getElementById("password").value;
+
+        // Send username and password to Flask
+        fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: username, password: password })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            // Login worked
+            currentUser    = data.username;
+            currentBalance = data.balance;
+            document.getElementById("logged-in-name").textContent = currentUser;
+            document.getElementById("balance").textContent        = currentBalance;
+            document.getElementById("login-page").style.display  = "none";
+            document.getElementById("main-app").style.display    = "block";
+            loadMarkets();
+            loadLeaderboard();
+          } else {
+            // Login failed
+            document.getElementById("login-error").textContent = data.error;
+          }
+        });
+      }
+
+      var isSignupMode = false;
+
+      function toggleAuthMode() {
+        isSignupMode = !isSignupMode;
+
+        if (isSignupMode) {
+          document.getElementById("auth-title").textContent      = "Create account";
+          document.getElementById("auth-button").textContent     = "Sign up";
+          document.getElementById("auth-button").onclick         = createAccount;
+          document.getElementById("auth-toggle-text").textContent = "Already have an account?";
+          document.getElementById("auth-toggle-link").textContent = "Log in";
+        } else {
+          document.getElementById("auth-title").textContent      = "PolySekunda";
+          document.getElementById("auth-button").textContent     = "Log in";
+          document.getElementById("auth-button").onclick         = login;
+          document.getElementById("auth-toggle-text").textContent = "No account?";
+          document.getElementById("auth-toggle-link").textContent = "Sign up";
+        }
+
+        document.getElementById("login-error").textContent = "";
+      }
+
+      function createAccount() {
+        var username = document.getElementById("username").value.toLowerCase();
+        var password = document.getElementById("password").value;
+
+        if (username === "" || password === "") {
+          document.getElementById("login-error").textContent = "Please fill both fields.";
+          return;
+        }
+
+        fetch("/create-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: username, password: password })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            currentUser    = data.username;
+            currentBalance = data.balance;
+            document.getElementById("logged-in-name").textContent = currentUser;
+            document.getElementById("balance").textContent        = currentBalance;
+            document.getElementById("login-page").style.display  = "none";
+            document.getElementById("main-app").style.display    = "block";
+            loadMarkets();
+            loadLeaderboard();
+          } else {
+            document.getElementById("login-error").textContent = data.error;
+          }
+        });
+      }
+
+      function logout() {
+        fetch("/logout", { method: "POST" })
+        .then(function() {
+          currentUser    = "";
+          currentBalance = 0;
+          document.getElementById("main-app").style.display   = "none";
+          document.getElementById("login-page").style.display = "block";
+          document.getElementById("username").value           = "";
+          document.getElementById("password").value           = "";
+          document.getElementById("login-error").textContent  = "";
+        });
+      }
+
+
+      // =====================
+      // MARKETS
+      // =====================
+
+      function loadMarkets() {
+        fetch("/markets")
+        .then(function(res) { return res.json(); })
+        .then(function(markets) {
+          var container = document.getElementById("markets-container");
+          container.innerHTML = "";
+
+          markets.forEach(function(market) {
+            container.innerHTML += buildMarketCard(market);
+          });
+        });
+      }
+
+      function buildMarketCard(market) {
+        var status = market.resolved
+          ? "<span style='color:#aaa; font-size:13px;'>Closed — winner: " + market.winner.toUpperCase() + "</span>"
+          : "";
+
+        var buttons = market.resolved ? "" :
+          "<input class='input-small' id='amount-" + market.id + "' type='number' value='50' min='1'>" +
+          "<button class='btn-yes' onclick='placeBet(" + market.id + ", \"yes\")'>Yes</button>" +
+          "<button class='btn-no'  onclick='placeBet(" + market.id + ", \"no\")'>No</button>";
+
+        return "<div class='card' id='market-" + market.id + "'>" +
+          "<h2>" + market.question + "</h2>" +
+          "<div class='odds-row'>" +
+            "<span class='odds-label-yes'>" + market.yes_pct + "%</span>" +
+            "<div class='odds-bar'><div class='odds-fill-yes' id='bar-yes-" + market.id + "' style='width:" + market.yes_pct + "%'></div></div>" +
+            "<div class='odds-bar'><div class='odds-fill-no'  id='bar-no-"  + market.id + "' style='width:" + market.no_pct  + "%'></div></div>" +
+            "<span class='odds-label-no'>" + market.no_pct + "%</span>" +
+          "</div>" +
+          "<div class='bet-row'>" + buttons + "</div>" +
+          status +
+          "<p class='bet-result' id='result-" + market.id + "'></p>" +
+        "</div>";
+      }
+
+
+      // =====================
+      // BETTING
+      // =====================
+
+      function placeBet(marketId, choice) {
+        var amount = parseInt(document.getElementById("amount-" + marketId).value);
+
+        if (isNaN(amount) || amount <= 0) {
+          alert("Enter a valid amount.");
+          return;
+        }
+
+        // Send bet to Flask
+        fetch("/bet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ market_id: marketId, choice: choice, amount: amount })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            // Update balance
+            currentBalance = data.new_balance;
+            document.getElementById("balance").textContent = currentBalance;
+
+            // Update result text
+            document.getElementById("result-" + marketId).textContent =
+              "You bet " + amount + " coins on " + choice.toUpperCase();
+
+            // Update odds bars
+            document.getElementById("bar-yes-" + marketId).style.width = data.odds.yes + "%";
+            document.getElementById("bar-no-"  + marketId).style.width = data.odds.no  + "%";
+
+            loadLeaderboard();
+          } else {
+            alert(data.error);
+          }
+        });
+      }
+
+
+      // =====================
+      // LEADERBOARD
+      // =====================
+
+      function loadLeaderboard() {
+        fetch("/leaderboard")
+        .then(function(res) { return res.json(); })
+        .then(function(players) {
+          var html = "";
+          players.forEach(function(player, i) {
+            var isMe = player.name === currentUser ? "class='me'" : "";
+            html += "<tr " + isMe + ">";
+            html += "<td class='rank'>" + (i + 1) + "</td>";
+            html += "<td>" + player.name + "</td>";
+            html += "<td class='coins'>" + player.coins + "</td>";
+            html += "</tr>";
+          });
+          document.getElementById("leaderboard").innerHTML = html;
+        });
+      }
+
+
+      // =====================
+      // CHECK SESSION ON LOAD
+      // =====================
+
+      fetch("/check-session")
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.logged_in) {
+          currentUser    = data.username;
+          currentBalance = data.balance;
+          document.getElementById("logged-in-name").textContent = currentUser;
+          document.getElementById("balance").textContent        = currentBalance;
+          document.getElementById("login-page").style.display  = "none";
+          document.getElementById("main-app").style.display    = "block";
+          loadMarkets();
+          loadLeaderboard();
+        }
+      });
+
+    </script>
+  </body>
+</html>
