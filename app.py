@@ -23,9 +23,7 @@ if db.find_user("admin") is None:
     db.add_user("admin", "admin123", is_admin=True)
 
 # Markets - only inserted if they don't already exist (won't duplicate on restart)
-db.add_market(0, "Will Slovakia beat Czechia?")
-db.add_market(1, "Will our class pass the math test?")
-db.add_market(2, "Will it rain in Prievidza this weekend?")
+# db.add_market(0, "Will Slovakia beat Czechia?")
 
 
 # =====================
