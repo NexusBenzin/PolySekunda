@@ -11,12 +11,12 @@ app.secret_key = "polysekunda_secret_123"  # needed for sessions to work
 db = Database()
 
 # Create starting accounts only if they don't exist yet
-if db.find_user("adam") is None:
-    db.add_user("adam", "1234")
-if db.find_user("petra") is None:
-    db.add_user("petra", "abcd")
-if db.find_user("marek") is None:
-    db.add_user("marek", "pass")
+# if db.find_user("adam") is None:
+#     db.add_user("adam", "1234")
+# if db.find_user("petra") is None:
+#     db.add_user("petra", "abcd")
+# if db.find_user("marek") is None:
+#     db.add_user("marek", "pass")
 
 # Admin account - change this password!
 if db.find_user("admin") is None:
