@@ -1,9 +1,9 @@
 class Market:
     def __init__(self, question):
         self.question = question
-        self.bets = {"yes": [], "no": []}
+        self.bets = {"yes": [], "no": []}  # list of (account, amount) tuples
         self.resolved = False
-        self.winner = None
+        self.winner = None  # "yes" or "no"
 
     def place_bet(self, account, choice, amount):
         choice = choice.lower()
@@ -16,7 +16,7 @@ class Market:
             print("This market is already closed.")
             return
 
-        if amount <= 10:
+        if amount <= 0:
             print("Bet amount must be greater than 0.")
             return
 
@@ -34,7 +34,7 @@ class Market:
         total = yes_total + no_total
 
         if total == 0:
-            return {"yes": 50, "no": 50}
+            return {"yes": 50, "no": 50}  # 50/50 if no bets yet
 
         yes_pct = round((yes_total / total) * 100)
         no_pct = 100 - yes_pct
@@ -54,7 +54,7 @@ class Market:
         self.resolved = True
         self.winner = outcome
 
-
+        # Pay out winners
         winning_bets = self.bets[outcome]
         losing_bets = self.bets["yes" if outcome == "no" else "no"]
 
@@ -69,6 +69,7 @@ class Market:
             return
 
         for account, amount in winning_bets:
+            # Winnings proportional to your share of the winning pool
             share = amount / winning_pool
             payout = round(amount + share * losing_pool)
             account.bal += payout
