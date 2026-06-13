@@ -181,6 +181,15 @@
         </div>
       </div>
 
+      <!-- Admin: create new market -->
+      <div class="card" id="new-market-card" style="display:none;">
+        <h2>Create New Market</h2>
+        <div class="bet-row">
+          <input class="input-full" id="new-market-question" type="text" placeholder="e.g. Will it snow tomorrow?" style="margin-bottom:0;">
+          <button class="btn-primary" style="width:auto; margin-top:0;" onclick="createMarket()">Add</button>
+        </div>
+      </div>
+
       <!-- Markets will be loaded here by JavaScript -->
       <div id="markets-container">
         <p class="loading">Loading markets...</p>
@@ -207,6 +216,7 @@
       // --- State ---
       var currentUser = "";
       var currentBalance = 0;
+      var isAdmin = false;
 
 
       // =====================
@@ -229,6 +239,8 @@
             // Login worked
             currentUser    = data.username;
             currentBalance = data.balance;
+            isAdmin        = data.is_admin;
+            if (isAdmin) document.getElementById("new-market-card").style.display = "block";
             document.getElementById("logged-in-name").textContent = currentUser;
             document.getElementById("balance").textContent        = currentBalance;
             document.getElementById("login-page").style.display  = "none";
@@ -283,6 +295,7 @@
           if (data.success) {
             currentUser    = data.username;
             currentBalance = data.balance;
+            isAdmin        = data.is_admin;
             document.getElementById("logged-in-name").textContent = currentUser;
             document.getElementById("balance").textContent        = currentBalance;
             document.getElementById("login-page").style.display  = "none";
@@ -331,10 +344,27 @@
           ? "<span style='color:#aaa; font-size:13px;'>Closed — winner: " + market.winner.toUpperCase() + "</span>"
           : "";
 
+        var myBetsText = "";
+        if (market.my_bets && market.my_bets.length > 0) {
+          var parts = market.my_bets.map(function(b) {
+            return b.amount + " on " + b.choice.toUpperCase();
+          });
+          myBetsText = "<p class='bet-result' style='color:#1a9e60;'>Your bets: " + parts.join(", ") + "</p>";
+        }
+
         var buttons = market.resolved ? "" :
           "<input class='input-small' id='amount-" + market.id + "' type='number' value='50' min='1'>" +
           "<button class='btn-yes' onclick='placeBet(" + market.id + ", \"yes\")'>Yes</button>" +
           "<button class='btn-no'  onclick='placeBet(" + market.id + ", \"no\")'>No</button>";
+
+        if (!market.resolved && isAdmin) {
+          buttons += "<button onclick='resolveMarket(" + market.id + ", \"yes\")' style='font-size:11px; color:#aaa;'>Resolve YES</button>" +
+                     "<button onclick='resolveMarket(" + market.id + ", \"no\")' style='font-size:11px; color:#aaa;'>Resolve NO</button>";
+        }
+
+        if (isAdmin) {
+          buttons += "<button onclick='deleteMarket(" + market.id + ")' style='font-size:11px; color:#d94f3d;'>Delete</button>";
+        }
 
         return "<div class='card' id='market-" + market.id + "'>" +
           "<h2>" + market.question + "</h2>" +
@@ -346,6 +376,7 @@
           "</div>" +
           "<div class='bet-row'>" + buttons + "</div>" +
           status +
+          myBetsText +
           "<p class='bet-result' id='result-" + market.id + "'></p>" +
         "</div>";
       }
@@ -393,6 +424,90 @@
 
 
       // =====================
+      // RESOLVE MARKET (admin)
+      // =====================
+
+      function resolveMarket(marketId, outcome) {
+        if (!confirm("Resolve this market as " + outcome.toUpperCase() + "? This pays out winners.")) {
+          return;
+        }
+
+        fetch("/resolve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ market_id: marketId, outcome: outcome })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            loadMarkets();
+            loadLeaderboard();
+            // Refresh own balance
+            fetch("/check-session")
+            .then(function(res) { return res.json(); })
+            .then(function(d) {
+              if (d.logged_in) {
+                currentBalance = d.balance;
+                document.getElementById("balance").textContent = currentBalance;
+              }
+            });
+          } else {
+            alert(data.error);
+          }
+        });
+      }
+
+
+      // =====================
+      // ADMIN: CREATE / DELETE MARKET
+      // =====================
+
+      function createMarket() {
+        var question = document.getElementById("new-market-question").value.trim();
+
+        if (question === "") {
+          alert("Enter a question first.");
+          return;
+        }
+
+        fetch("/create-market", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: question })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            document.getElementById("new-market-question").value = "";
+            loadMarkets();
+          } else {
+            alert(data.error);
+          }
+        });
+      }
+
+      function deleteMarket(marketId) {
+        if (!confirm("Delete this market? This cannot be undone.")) {
+          return;
+        }
+
+        fetch("/delete-market", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ market_id: marketId })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            loadMarkets();
+          } else {
+            alert(data.error);
+          }
+        });
+      }
+
+
+      // =====================
       // LEADERBOARD
       // =====================
 
@@ -424,6 +539,8 @@
         if (data.logged_in) {
           currentUser    = data.username;
           currentBalance = data.balance;
+          isAdmin        = data.is_admin;
+          if (isAdmin) document.getElementById("new-market-card").style.display = "block";
           document.getElementById("logged-in-name").textContent = currentUser;
           document.getElementById("balance").textContent        = currentBalance;
           document.getElementById("login-page").style.display  = "none";
