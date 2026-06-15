@@ -25,8 +25,7 @@ class Database:
             return None
 
     def init_db(self):
-        """Creates tables if they don't exist yet. Adjust columns as needed!"""
-        # Notice: 'SERIAL' replaces SQLite's 'AUTOINCREMENT'
+        """Creates tables if they don't exist yet."""
         create_tables_query = """
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -49,9 +48,30 @@ class Database:
             finally:
                 conn.close()
 
+    def find_user(self, username):
+        """
+        Finds a user by username and returns their full record.
+        Matches the default behavior of SQLite fetchone() returning a tuple.
+        """
+        query = "SELECT id, username, user_data, created_at FROM users WHERE username = %s;"
+        
+        conn = self.get_connection()
+        if conn:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, (username,))
+                    result = cursor.fetchone()
+                    # Returns a tuple like (1, 'username', 'data', 'timestamp') or None if not found
+                    return result 
+            except Exception as e:
+                print(f"Error finding user: {e}")
+                return None
+            finally:
+                conn.close()
+        return None
+
     def save_user_data(self, username, data_string):
         """Inserts or updates a user's data string into Neon."""
-        # Postgres uses '%s' as placeholders instead of SQLite's '?'
         query = """
         INSERT INTO users (username, user_data) 
         VALUES (%s, %s)
@@ -90,7 +110,6 @@ class Database:
                 conn.close()
         return None
 
-# This allows you to test the file standalone by running `python user_data.py`
 if __name__ == "__main__":
     print("Testing Database class initialization...")
     db = Database()
